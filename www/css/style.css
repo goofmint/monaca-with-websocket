@@ -1,2 +1,30 @@
-/**/
+.content {
+  text-align: center;
+  padding-bottom: 4em;
+}
 
+.loginform{
+  margin-top: 30px;
+}
+
+.send-area {
+  padding: 0 5px;
+  box-sizing: border-box;
+  line-height: 49px;
+  position: fixed;
+  bottom: 0px;
+  width: 100%;
+  border-top: solid 1px #ccc;
+}
+
+.send-area ons-input {
+	display: inline-block;
+	position: relative;
+	width: calc(100% - 60px);
+}
+
+.send-area input {
+	vertical-align: middle;
+  position: relative;
+  width: 98%;
+}

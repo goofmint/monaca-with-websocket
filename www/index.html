@@ -3,127 +3,121 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <meta http-equiv="Content-Security-Policy" content="default-src * data:; style-src * 'unsafe-inline'; script-src * 'unsafe-inline' 'unsafe-eval'">
+  <meta http-equiv="Content-Security-Policy" content="default-src * data: gap: https://ssl.gstatic.com; style-src * 'unsafe-inline'; script-src * 'unsafe-inline' 'unsafe-eval'">
   <script src="components/loader.js"></script>
-  <script src="lib/onsenui/js/onsenui.min.js"></script>
 
   <link rel="stylesheet" href="components/loader.css">
-  <link rel="stylesheet" href="lib/onsenui/css/onsenui.css">
-  <link rel="stylesheet" href="lib/onsenui/css/onsen-css-components.css">
   <link rel="stylesheet" href="css/style.css">
 
   <script>
+    // Onsen UIのスタイル定義
+    ons.forcePlatformStyling('ios');
+    
+    // WebSocketサーバの定義
+    var uri = "wss://your-chat.herokuapp.com/";
+    var ws = null;  // WebSocketオブジェクト
+
+    var username;   // ユーザー名
+    
     // ページが切り替わる度に呼ばれます。
-    document.addEventListener('init', function(event) {
-    	// WebSocketを使ったチャットのサンプル
-    	// https://github.com/heroku-examples/ruby-websockets-chat-demo
-    	// を利用しています。
-    	// WebSocketサーバの定義
-			var uri      = "wss://your-chat.herokuapp.com/";
-			var ws       = new WebSocket(uri);
-			
-			// ユーザ名をlocalStorageから取得
-			var username = localStorage.getItem("userName");
-    	
+    document.addEventListener('show', function(event) {
       var page = event.target;
       
-			// 最初のページ。チャット名を決めます。
-      if (page.matches('#first-page')) {
-      	
-      	// すでに設定済みであればチャット画面に遷移します。
-	    	if (username) {
-	    		document.querySelector('#navigator').pushPage('page2.html');
-	    	}
-	    	
-	    	// ユーザ名を設定
-        page.querySelector('#push-button').onclick = function() {
-        	// 変数とlocalStorageに保存
-        	username = $('#username').val();
-        	localStorage.setItem('userName', username);
-        	
-        	// チャット画面に遷移
+      if (page.matches('#first-page')) {  // 入室画面の処理
+        // 入室ボタンを押した時の処理
+        $('#push-button').on('click', function() {
+          // ユーザ名を設定
+          username = $('#username').val();
+          
+          // WebSocket接続
+          ws = new WebSocket(uri);
+          
+          // チャット画面に遷移
           document.querySelector('#navigator').pushPage('page2.html');
+        });
+      } else if (page.matches('#second-page')) {  // チャット画面の処理
+        // WebSocketでメッセージを受け取った時の処理
+        ws.onmessage = function(message) {
+          var data = JSON.parse(message.data);
+          
+          // 送信元が自分か他人かで画面のデザインを変更
+          if (data.handle == username) {
+            $('#chats').append(`
+              <ons-list-item modifier="nodivider">
+                <div class="right">
+                  <ons-button style="background-color: green">${data.text}</ons-button>
+                </div>
+              </ons-list-item>`);
+          }else{
+            $('#chats').append(`
+              <ons-list-item modifier="nodivider">
+                <ons-button>${data.text}</ons-button>
+                <span class="list-item__subtitle">${data.handle}</span>
+              </ons-list-item>`);
+          }
         };
-      } else if (page.matches('#second-page')) {
-      	// チャット画面。
-      	
-				// WebSocketでメッセージを受け取った時の処理
-				ws.onmessage = function(message) {
-					var data = JSON.parse(message.data);
-					
-					// 送信元が自分か他人かで画面のデザインを変更
-					if (data.handle == username) {
-						$('#chats').append(`
-							<ons-list-item modifier="nodivider">
-			        	<div class="right">
-				        	<ons-button style="background-color: green">${data.text}</ons-button>
-				        </div>
-		        	</ons-list-item>`);
-					}else{
-						$('#chats').append(`
-							<ons-list-item modifier="nodivider">
-			        	<ons-button>${data.text}</ons-button>
-		        		<span class="list-item__subtitle">${data.handle}</span>
-		        	</ons-list-item>`);
-					}
-				};
-				
-				// 送信ボタンを押した時の処理
-				$("#send").on("click", function(e) {
-					e.preventDefault();
-					
-					// WebSocketで送信
-					ws.send(JSON.stringify({ handle: username, text: $("#message").val() }));
-					
-					// 元の入力内容は削除
-					$("#message").val("")
-				});
-				
-				// 画面を戻るときの処理
-				page.querySelector('#pop-button').onclick = function() {
-          document.querySelector('#navigator').popPage();
-        };
+        
+        // 送信ボタンを押した時の処理
+        $('#send').on('click', function(e) {
+          // WebSocketで送信
+          ws.send(JSON.stringify({ handle: username, text: $('#message').val() }));
+          
+          // 元の入力内容は削除
+          $('#message').val('')
+        });
+        
       }
-    });	
+    }); 
+    
+    // Onsen UIロード完了時の処理
+    ons.ready(function() {
+      // 入室画面に戻るときの処理
+      $('#navigator').on('prepop', function() {
+        // WebSocket切断
+        ws.close();
+        ws = null;
+      });
+    });
   </script>
 </head>
 <body>
   <ons-navigator id="navigator" page="page1.html"></ons-navigator>
 
-  <ons-template id="page1.html">
+  <template id="page1.html">
     <ons-page id="first-page">
       <ons-toolbar>
         <div class="center">入室</div>
       </ons-toolbar>
 
-      <div class="content" style="text-align: center">
+      <div class="content">
         <p>チャットへようこそ。<br />名前を決めてください。</p>
-        <div style="text-align: center; margin-top: 30px;">
-			    <p>
-			      <ons-input id="username" modifier="underbar" placeholder="Username" float></ons-input>
-			    </p>
-			  </div>
+        <div class="loginform">
+          <p>
+            <ons-input id="username" modifier="underbar" placeholder="Username" float></ons-input>
+          </p>
+        </div>
         <ons-button id="push-button">入室</ons-button>
       </div>
     </ons-page>
-  </ons-template>
+  </template>
 
-  <ons-template id="page2.html">
+  <template id="page2.html">
     <ons-page id="second-page">
       <ons-toolbar>
-        <div class="left"><ons-back-button id="pop-button">入室</ons-back-button></div>
+        <div class="left"><ons-back-button>入室</ons-back-button></div>
         <div class="center">チャット</div>
       </ons-toolbar>
 
-      <div class="content" style="text-align: center;padding-bottom: 4em;">
-      	<ons-list id="chats">
-	      </ons-list>
+      <div class="content">
+        <ons-list id="chats">
+        </ons-list>
       </div>
-      <ons-tabbar position="auto" style="text-align: center">
-      	<ons-input id="message" placeholder="メッセージ"></ons-input>
-      	<ons-button id="send" modifier="quiet">送信</ons-button>
-      </ons-tabbar>
+      
+      <div class="send-area">
+        <ons-input id="message" placeholder="メッセージ"></ons-input>
+        <ons-button id="send" modifier="quiet">送信</ons-button>
+      </div>
     </ons-page>
-  </ons-template>
+  </template>
 </body>
 </html>

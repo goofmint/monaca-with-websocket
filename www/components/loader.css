@@ -4,3 +4,13 @@
  */
 
 /*** <GENERATED> ***/
+
+
+/*** <Start:onsenui> ***/
+/*** <Start:onsenui LoadCss:"components/onsenui/css/onsenui.min.css"> ***/
+@import url("onsenui/css/onsenui.min.css");
+/*** <End:onsenui LoadCss:"components/onsenui/css/onsenui.min.css"> ***/
+/*** <Start:onsenui LoadCss:"components/onsenui/css/onsen-css-components.min.css"> ***/
+@import url("onsenui/css/onsen-css-components.min.css");
+/*** <End:onsenui LoadCss:"components/onsenui/css/onsen-css-components.min.css"> ***/
+/*** <End:onsenui> ***/
